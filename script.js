@@ -20,6 +20,7 @@ const MAX_GUESSES = 6;
 let currentRow = 0;
 let currentCol = 0;
 let board = [];
+let shareRows = []; // store colors for results share
 
 const boardEl = document.getElementById("board");
 const messageEl = document.getElementById("message");
@@ -81,6 +82,7 @@ function handleEnter() {
 
   if (guess === ANSWER) {
     showMessage("You got it!");
+    showShareButton(true);
     disableKeyboard();
     return;
   }
@@ -90,6 +92,7 @@ function handleEnter() {
 
   if (currentRow === MAX_GUESSES) {
     showMessage("Answer was " + ANSWER);
+    showShareButton(false);
     disableKeyboard();
   } else {
     showMessage("");
@@ -121,6 +124,8 @@ function colorRow(guess) {
       used[idx] = true;
     }
   }
+
+  shareRows.push(result); // save this row for sharing
 
   // apply
   for (let i = 0; i < 5; i++) {
@@ -207,4 +212,36 @@ function markKeyboard(letter, state) {
 function disableKeyboard() {
   const keys = keyboardEl.querySelectorAll("button");
   keys.forEach(k => k.disabled = true);
+}
+
+/* ---------- RESULTS SHARE FEATURE ---------- */
+function buildShareText(won) {
+  const tries = shareRows.length;
+  const header = `Friendle ${won ? tries : "X"}/6`;
+  const lines = shareRows.map(row => 
+    row.map(cell => {
+      if (cell === "green") return "🟩";
+      if (cell === "yellow") return "🟨";
+      return "⬛";
+    }).join("")
+  );
+  return header + "\n" + lines.join("\n");
+}
+
+function showShareButton(won) {
+  const container = document.getElementById("share-container");
+  const btn = document.createElement("button");
+  btn.textContent = "Share result";
+  btn.className = "key wide";
+  btn.style.marginTop = "0.5rem";
+  btn.onclick = () => {
+    const text = buildShareText(won);
+    navigator.clipboard.writeText(text).then(() => {
+      showMessage("Copied to clipboard!");
+    }).catch(() => {
+      showMessage("Here it is:\n" + text);
+    });
+  };
+  container.innerHTML = "";
+  container.appendChild(btn);
 }
