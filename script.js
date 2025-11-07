@@ -1,23 +1,21 @@
+// read obfuscated word from fragment: index.html#p=BASE64_OF_REVERSED_WORD
 function getWordFromFragment(){
-  // expects #p=BASE64REVED
   const hash = window.location.hash || '';
   const m = hash.match(/p=([^&]+)/);
   if (!m) return null;
   try {
     const token = decodeURIComponent(m[1]);
-    const rev = atob(token);        // base64 decode -> reversed word
+    const rev = atob(token); // base64 decode
     const word = rev.split('').reverse().join('').toUpperCase();
     if (word.length !== 5 || !/^[A-Z]+$/.test(word)) return null;
     return word;
-  } catch(e){
+  } catch (e) {
+    console.error(e);
     return null;
   }
 }
 
 const ANSWER = getWordFromFragment();
-
-
-const ANSWER = getWordFromURL();
 const MAX_GUESSES = 6;
 let currentRow = 0;
 let currentCol = 0;
@@ -28,12 +26,12 @@ const messageEl = document.getElementById("message");
 const keyboardEl = document.getElementById("keyboard");
 
 if (!ANSWER) {
-  // no word supplied
-  messageEl.textContent = "No puzzle word provided. Ask your friend for the link.";
+  messageEl.textContent = "No puzzle found in the link. Make sure it ends with #p=...";
 } else {
   buildBoard();
   buildKeyboard();
   showMessage("");
+  console.log("Loaded puzzle:", ANSWER); // for you
 }
 
 function buildBoard() {
@@ -77,9 +75,8 @@ function handleEnter() {
     showMessage("Not enough letters");
     return;
   }
-  const guess = board[currentRow].map(t => t.textContent).join("");
 
-  // since words are custom, we skip dictionary check
+  const guess = board[currentRow].map(t => t.textContent).join("");
   colorRow(guess);
 
   if (guess === ANSWER) {
@@ -90,8 +87,9 @@ function handleEnter() {
 
   currentRow++;
   currentCol = 0;
+
   if (currentRow === MAX_GUESSES) {
-    showMessage(`Answer was ${ANSWER}`);
+    showMessage("Answer was " + ANSWER);
     disableKeyboard();
   } else {
     showMessage("");
@@ -103,26 +101,28 @@ function colorRow(guess) {
   const guessArr = guess.split("");
 
   const result = Array(5).fill("gray");
-  const answerUsed = Array(5).fill(false);
+  const used = Array(5).fill(false);
 
   // greens
   for (let i = 0; i < 5; i++) {
     if (guessArr[i] === answerArr[i]) {
       result[i] = "green";
-      answerUsed[i] = true;
+      used[i] = true;
     }
   }
+
   // yellows
   for (let i = 0; i < 5; i++) {
     if (result[i] === "green") continue;
     const letter = guessArr[i];
-    const idx = answerArr.findIndex((a, j) => a === letter && !answerUsed[j]);
+    const idx = answerArr.findIndex((a, j) => a === letter && !used[j]);
     if (idx !== -1) {
       result[i] = "yellow";
-      answerUsed[idx] = true;
+      used[idx] = true;
     }
   }
 
+  // apply
   for (let i = 0; i < 5; i++) {
     const tile = board[currentRow][i];
     if (result[i] === "green") {
@@ -180,6 +180,7 @@ function buildKeyboard() {
     keyboardEl.appendChild(row);
   });
 
+  // physical keyboard
   document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") return handleEnter();
     if (e.key === "Backspace") return handleDelete();
@@ -195,10 +196,7 @@ function markKeyboard(letter, state) {
   if (!key) return;
 
   if (state === "green" || (state === "yellow" && key.dataset.state !== "green")) {
-    key.style.background =
-      state === "green"
-        ? "var(--green)"
-        : "var(--yellow)";
+    key.style.background = state === "green" ? "var(--green)" : "var(--yellow)";
     key.dataset.state = state;
   } else if (!key.dataset.state) {
     key.style.background = "var(--gray)";
