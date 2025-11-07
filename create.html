@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Friendle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      max-width: 500px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    input {
+      width: 100%;
+      font-size: 1.2rem;
+      padding: .5rem;
+      text-transform: uppercase;
+    }
+    button {
+      margin-top: 1rem;
+      padding: .6rem 1rem;
+      font-size: 1rem;
+    }
+    #link {
+      margin-top: 1rem;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <h1>Create a puzzle</h1>
+  <p>Enter a 5-letter word:</p>
+  <input id="word" maxlength="5" placeholder="CRANE" />
+  <button id="make">Create link</button>
+  <div id="link"></div>
+
+  <script>
+    const baseUrl = window.location.origin + window.location.pathname.replace("create.html", "index.html");
+
+    document.getElementById("make").onclick = () => {
+      const w = document.getElementById("word").value.trim().toUpperCase();
+      if (w.length !== 5 || !/^[A-Z]+$/.test(w)) {
+        alert("Please enter exactly 5 letters (A-Z).");
+        return;
+      }
+      const url = baseUrl + "?word=" + encodeURIComponent(w);
+      const div = document.getElementById("link");
+      div.innerHTML = `
+        <p>Share this link:</p>
+        <a href="${url}">${url}</a>
+      `;
+    };
+  </script>
+</body>
+</html>
