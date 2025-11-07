@@ -4,7 +4,59 @@
   <meta charset="UTF-8" />
   <title>Friendle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    :root {
+      --tile-size: 3rem;
+      --gap: .4rem;
+      --bg: #121213;
+      --tile-bg: #3a3a3c;
+      --text: #fff;
+      --green: #6aaa64;
+      --yellow: #c9b458;
+      --gray: #3a3a3c;
+      --kbd: #818384;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center;
+      margin: 1rem;
+    }
+    h1 { margin-bottom: 1rem; }
+    #board {
+      display: grid;
+      grid-template-rows: repeat(6, var(--tile-size));
+      gap: var(--gap);
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, var(--tile-size));
+      gap: var(--gap);
+    }
+    .tile {
+      border: 2px solid #3a3a3c;
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      background: #121213;
+    }
+    #message { min-height: 1.2rem; margin-bottom: 1rem; }
+    #keyboard { display: grid; gap: .4rem; justify-content: center; }
+    .kbd-row { display: flex; gap: .4rem; justify-content: center; }
+    .key {
+      background: var(--kbd);
+      border: none;
+      border-radius: 4px;
+      padding: .6rem .4rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .key.wide { flex: 1.3; }
+  </style>
 </head>
 <body>
   <h1>Friendle</h1>
@@ -12,6 +64,200 @@
   <div id="message"></div>
   <div id="keyboard"></div>
 
-  <script src="script.js"></script>
+  <script>
+    // get word from fragment like: index.html#p=BASE64
+    function getWordFromFragment(){
+      const hash = window.location.hash || '';
+      const m = hash.match(/p=([^&]+)/);
+      if (!m) return null;
+      try {
+        const token = decodeURIComponent(m[1]);
+        const rev = atob(token); // base64 decode
+        const word = rev.split('').reverse().join('').toUpperCase();
+        if (word.length !== 5 || !/^[A-Z]+$/.test(word)) return null;
+        return word;
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    }
+
+    const ANSWER = getWordFromFragment();
+    const MAX_GUESSES = 6;
+    let currentRow = 0;
+    let currentCol = 0;
+    let board = [];
+
+    const boardEl = document.getElementById("board");
+    const messageEl = document.getElementById("message");
+    const keyboardEl = document.getElementById("keyboard");
+
+    if (!ANSWER) {
+      messageEl.textContent = "No puzzle found in the link. Ask your friend for the full link (it should end with #p=....)";
+    } else {
+      buildBoard();
+      buildKeyboard();
+      showMessage("");
+      console.log("Loaded puzzle:", ANSWER); // just for you
+    }
+
+    function buildBoard() {
+      for (let r = 0; r < MAX_GUESSES; r++) {
+        const row = document.createElement("div");
+        row.className = "row";
+        board[r] = [];
+        for (let c = 0; c < 5; c++) {
+          const tile = document.createElement("div");
+          tile.className = "tile";
+          row.appendChild(tile);
+          board[r][c] = tile;
+        }
+        boardEl.appendChild(row);
+      }
+    }
+
+    function showMessage(msg) { messageEl.textContent = msg; }
+
+    function handleKey(letter) {
+      if (!ANSWER) return;
+      if (currentCol < 5) {
+        board[currentRow][currentCol].textContent = letter;
+        currentCol++;
+      }
+    }
+
+    function handleDelete() {
+      if (!ANSWER) return;
+      if (currentCol > 0) {
+        currentCol--;
+        board[currentRow][currentCol].textContent = "";
+      }
+    }
+
+    function handleEnter() {
+      if (!ANSWER) return;
+      if (currentCol < 5) { showMessage("Not enough letters"); return; }
+
+      const guess = board[currentRow].map(t => t.textContent).join("");
+      colorRow(guess);
+
+      if (guess === ANSWER) {
+        showMessage("You got it!");
+        disableKeyboard();
+        return;
+      }
+
+      currentRow++;
+      currentCol = 0;
+      if (currentRow === MAX_GUESSES) {
+        showMessage("Answer was " + ANSWER);
+        disableKeyboard();
+      } else {
+        showMessage("");
+      }
+    }
+
+    function colorRow(guess) {
+      const answerArr = ANSWER.split("");
+      const guessArr = guess.split("");
+      const result = Array(5).fill("gray");
+      const used = Array(5).fill(false);
+
+      // greens
+      for (let i = 0; i < 5; i++) {
+        if (guessArr[i] === answerArr[i]) {
+          result[i] = "green";
+          used[i] = true;
+        }
+      }
+      // yellows
+      for (let i = 0; i < 5; i++) {
+        if (result[i] === "green") continue;
+        const letter = guessArr[i];
+        const idx = answerArr.findIndex((a, j) => a === letter && !used[j]);
+        if (idx !== -1) {
+          result[i] = "yellow";
+          used[idx] = true;
+        }
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const tile = board[currentRow][i];
+        if (result[i] === "green") {
+          tile.style.background = "var(--green)";
+          tile.style.borderColor = "var(--green)";
+          markKeyboard(guessArr[i], "green");
+        } else if (result[i] === "yellow") {
+          tile.style.background = "var(--yellow)";
+          tile.style.borderColor = "var(--yellow)";
+          markKeyboard(guessArr[i], "yellow");
+        } else {
+          tile.style.background = "var(--gray)";
+          tile.style.borderColor = "var(--gray)";
+          markKeyboard(guessArr[i], "gray");
+        }
+      }
+    }
+
+    function buildKeyboard() {
+      const rows = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+      rows.forEach((rowLetters, index) => {
+        const row = document.createElement("div");
+        row.className = "kbd-row";
+
+        if (index === 2) {
+          const enter = document.createElement("button");
+          enter.textContent = "Enter";
+          enter.className = "key wide";
+          enter.onclick = handleEnter;
+          row.appendChild(enter);
+        }
+
+        rowLetters.split("").forEach(letter => {
+          const key = document.createElement("button");
+          key.textContent = letter;
+          key.className = "key";
+          key.onclick = () => handleKey(letter);
+          key.id = "key-" + letter;
+          row.appendChild(key);
+        });
+
+        if (index === 2) {
+          const del = document.createElement("button");
+          del.textContent = "Del";
+          del.className = "key wide";
+          del.onclick = handleDelete;
+          row.appendChild(del);
+        }
+
+        keyboardEl.appendChild(row);
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") return handleEnter();
+        if (e.key === "Backspace") return handleDelete();
+        const letter = e.key.toUpperCase();
+        if (/^[A-Z]$/.test(letter)) handleKey(letter);
+      });
+    }
+
+    function markKeyboard(letter, state) {
+      const key = document.getElementById("key-" + letter);
+      if (!key) return;
+      // don't downgrade green
+      if (state === "green" || (state === "yellow" && key.dataset.state !== "green")) {
+        key.style.background = state === "green" ? "var(--green)" : "var(--yellow)";
+        key.dataset.state = state;
+      } else if (!key.dataset.state) {
+        key.style.background = "var(--gray)";
+        key.dataset.state = state;
+      }
+    }
+
+    function disableKeyboard() {
+      const keys = keyboardEl.querySelectorAll("button");
+      keys.forEach(k => k.disabled = true);
+    }
+  </script>
 </body>
 </html>
