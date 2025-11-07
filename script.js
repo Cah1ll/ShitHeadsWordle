@@ -1,12 +1,21 @@
-// get word from ?word=CRANE
-function getWordFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  const w = params.get("word");
-  if (!w) return null;
-  const upper = w.toUpperCase();
-  if (upper.length !== 5 || !/^[A-Z]+$/.test(upper)) return null;
-  return upper;
+function getWordFromFragment(){
+  // expects #p=BASE64REVED
+  const hash = window.location.hash || '';
+  const m = hash.match(/p=([^&]+)/);
+  if (!m) return null;
+  try {
+    const token = decodeURIComponent(m[1]);
+    const rev = atob(token);        // base64 decode -> reversed word
+    const word = rev.split('').reverse().join('').toUpperCase();
+    if (word.length !== 5 || !/^[A-Z]+$/.test(word)) return null;
+    return word;
+  } catch(e){
+    return null;
+  }
 }
+
+const ANSWER = getWordFromFragment();
+
 
 const ANSWER = getWordFromURL();
 const MAX_GUESSES = 6;
