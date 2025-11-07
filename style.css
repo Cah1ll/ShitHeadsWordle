@@ -2,7 +2,6 @@
   --tile-size: 3rem;
   --gap: .4rem;
   --bg: #121213;
-  --tile-bg: #3a3a3c;
   --text: #fff;
   --green: #6aaa64;
   --yellow: #c9b458;
@@ -50,43 +49,50 @@ h1 {
   margin-bottom: 1rem;
 }
 
+/* KEYBOARD */
 #keyboard {
   display: grid;
-  gap: .5rem;
+  gap: .55rem;
   justify-content: center;
-  max-width: 500px;
+  max-width: 520px;
   margin: 0 auto;
 }
 
 .kbd-row {
   display: flex;
-  gap: .5rem;
+  gap: .55rem;
   justify-content: center;
-  flex-wrap: nowrap;
 }
 
 .key {
   background: var(--kbd);
   border: none;
   border-radius: 6px;
-  padding: .75rem .6rem;   /* bigger tap target */
-  min-width: 2.4rem;       /* wider keys */
+  padding: .8rem .6rem;     /* bigger tap target */
+  min-width: 2.6rem;        /* wider keys */
   font-weight: 600;
   color: #fff;
-  font-size: 1rem;         /* >=16px on most devices */
+  font-size: 1rem;          /* >= 16px on phones */
 }
 
 .key.wide {
   flex: 1.4;
-  min-width: 4.5rem;
+  min-width: 4.6rem;
 }
 
+/* mobile tweaks */
 @media (max-width: 480px) {
   :root {
     --tile-size: 2.8rem;
   }
+  .tile {
+    font-size: 1.35rem;
+  }
+  #keyboard {
+    max-width: 100%;
+  }
   .key {
-    padding: .8rem .5rem;
+    padding: .85rem .5rem;
     font-size: 1.05rem;
   }
 }
