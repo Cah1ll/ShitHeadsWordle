@@ -1,18 +1,14 @@
-// simple word list - swap in your own
-const WORDS = [
-  "CRANE", "LEMON", "PARTY", "SHARK", "ROBOT",
-  "SWEET", "NIGHT", "POINT", "TRUCK", "CABLE"
-];
-
-// pick word by date so everyone sees same one
-function getTodayWord() {
-  const start = new Date(2025, 0, 1); // Jan 1 2025
-  const today = new Date();
-  const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
-  return WORDS[diffDays % WORDS.length];
+// get word from ?word=CRANE
+function getWordFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const w = params.get("word");
+  if (!w) return null;
+  const upper = w.toUpperCase();
+  if (upper.length !== 5 || !/^[A-Z]+$/.test(upper)) return null;
+  return upper;
 }
 
-const ANSWER = getTodayWord();
+const ANSWER = getWordFromURL();
 const MAX_GUESSES = 6;
 let currentRow = 0;
 let currentCol = 0;
@@ -21,6 +17,15 @@ let board = [];
 const boardEl = document.getElementById("board");
 const messageEl = document.getElementById("message");
 const keyboardEl = document.getElementById("keyboard");
+
+if (!ANSWER) {
+  // no word supplied
+  messageEl.textContent = "No puzzle word provided. Ask your friend for the link.";
+} else {
+  buildBoard();
+  buildKeyboard();
+  showMessage("");
+}
 
 function buildBoard() {
   for (let r = 0; r < MAX_GUESSES; r++) {
@@ -42,6 +47,7 @@ function showMessage(msg) {
 }
 
 function handleKey(letter) {
+  if (!ANSWER) return;
   if (currentCol < 5) {
     board[currentRow][currentCol].textContent = letter;
     currentCol++;
@@ -49,6 +55,7 @@ function handleKey(letter) {
 }
 
 function handleDelete() {
+  if (!ANSWER) return;
   if (currentCol > 0) {
     currentCol--;
     board[currentRow][currentCol].textContent = "";
@@ -56,18 +63,14 @@ function handleDelete() {
 }
 
 function handleEnter() {
+  if (!ANSWER) return;
   if (currentCol < 5) {
     showMessage("Not enough letters");
     return;
   }
   const guess = board[currentRow].map(t => t.textContent).join("");
 
-  // simple "is it a word" check – here we only allow words in WORDS
-  if (!WORDS.includes(guess)) {
-    showMessage("Not in list (edit script.js to allow all words)");
-    return;
-  }
-
+  // since words are custom, we skip dictionary check
   colorRow(guess);
 
   if (guess === ANSWER) {
@@ -90,18 +93,17 @@ function colorRow(guess) {
   const answerArr = ANSWER.split("");
   const guessArr = guess.split("");
 
-  // first pass greens
   const result = Array(5).fill("gray");
   const answerUsed = Array(5).fill(false);
 
+  // greens
   for (let i = 0; i < 5; i++) {
     if (guessArr[i] === answerArr[i]) {
       result[i] = "green";
       answerUsed[i] = true;
     }
   }
-
-  // second pass yellows
+  // yellows
   for (let i = 0; i < 5; i++) {
     if (result[i] === "green") continue;
     const letter = guessArr[i];
@@ -112,7 +114,6 @@ function colorRow(guess) {
     }
   }
 
-  // apply colors
   for (let i = 0; i < 5; i++) {
     const tile = board[currentRow][i];
     if (result[i] === "green") {
@@ -143,7 +144,6 @@ function buildKeyboard() {
     row.className = "kbd-row";
 
     if (index === 2) {
-      // add Enter
       const enter = document.createElement("button");
       enter.textContent = "Enter";
       enter.className = "key wide";
@@ -161,7 +161,6 @@ function buildKeyboard() {
     });
 
     if (index === 2) {
-      // add delete
       const del = document.createElement("button");
       del.textContent = "Del";
       del.className = "key wide";
@@ -172,7 +171,6 @@ function buildKeyboard() {
     keyboardEl.appendChild(row);
   });
 
-  // support physical keyboard too
   document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") return handleEnter();
     if (e.key === "Backspace") return handleDelete();
@@ -187,7 +185,6 @@ function markKeyboard(letter, state) {
   const key = document.getElementById("key-" + letter);
   if (!key) return;
 
-  // don't downgrade green
   if (state === "green" || (state === "yellow" && key.dataset.state !== "green")) {
     key.style.background =
       state === "green"
@@ -204,8 +201,3 @@ function disableKeyboard() {
   const keys = keyboardEl.querySelectorAll("button");
   keys.forEach(k => k.disabled = true);
 }
-
-buildBoard();
-buildKeyboard();
-showMessage(""); // clear
-console.log("Today's word is:", ANSWER);
