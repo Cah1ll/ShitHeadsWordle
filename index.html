@@ -3,11 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <title>Friendle</title>
-  <!-- prevents zooming and ensures correct scaling on mobile -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* small inline style for the top-right Create button */
+    #create-link {
+      position: absolute;
+      top: 0.8rem;
+      right: 1rem;
+      background: var(--green, #6aaa64);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    #create-link:hover {
+      background: #579a55;
+    }
+  </style>
 </head>
 <body>
+  <a id="create-link" href="create.html">Create</a>
   <h1>Friendle</h1>
   <div id="board"></div>
   <div id="message"></div>
